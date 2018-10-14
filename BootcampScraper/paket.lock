@@ -1,0 +1,4 @@
+RESTRICTION: == net472
+NUGET
+  remote: https://www.nuget.org/api/v2
+    HtmlAgilityPack (1.8.9)
