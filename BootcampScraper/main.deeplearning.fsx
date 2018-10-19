@@ -41,13 +41,14 @@ let pages =
      |> Seq.skipWhile (fun (text,href) -> not <| text.StartsWith("OCR"))
 
 let wc = new WebClient()
-let safeDL (url:string) path = 
+wc.Proxy <- null
+let dlButSkip404s (url:string) path = 
     try  
         wc.DownloadFile(url, path)  
-        py2jupy path
+        true
     with
-    | :? System.Net.WebException as ex when ex.Message.Contains("404") -> printfn "%s" ex.Message
-    | ex -> reraise()
+    | :? System.Net.WebException as ex when ex.Message.Contains("404") -> printfn "%s" ex.Message; false
+    | ex -> reraise();false
 
 pages 
 |> Seq.map(fun (title,url) -> 
@@ -75,14 +76,12 @@ pages
             else 
                 match filename.Split('.') |> Array.last with
                 | "py" ->
-                    safeDL url path
-                    py2jupy path
+                    if dlButSkip404s url path then py2jupy path
                 | "pdf"
                 | "zip"
                 | "csv"
                 | "npz"
-                | "h5" ->
-                    safeDL url path
+                | "h5" -> dlButSkip404s url path |> ignore
                 | extension -> printfn "skipping unknown extension %s" extension  )
     |> Array.ofSeq)
 |> Array.ofSeq
